@@ -1,0 +1,144 @@
+<html>
+<head>
+<title>CSCI 571 - HW 4 - XML Parsing</title>
+<script type="text/javascript">
+    var xmlDoc;
+    function loadXML(inputForm) {
+        var url = inputForm.url.value;
+        if(url.trim().length == 0 ) { alert("ERROR : Please provide a file name"); return; }
+        if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
+            xmlhttp = new XMLHttpRequest();            
+        }
+        else { // code for IE6, IE5
+            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");  
+        }
+        
+        try {           
+            xmlhttp.open("GET",url,false); //open, send, responseXML are
+            var pattern = new RegExp('^(http)(s)?://', 'i');   
+            var httpReq = false;
+            if(pattern.test(url)) { // Absolute path
+                httpReq = true;
+                if(url.indexOf(window.location.host) == -1) { // for the files from another domain
+                    alert("ERROR : File not found"); return; 
+                }
+            }
+            xmlhttp.send(); //properties of XMLHTTPRequest 
+            if(httpReq) {
+                if(xmlhttp.status == 404) {
+                    alert("ERROR : File not found"); return;
+                } else if(xmlhttp.status != 200) {
+                    alert("ERROR : Problem loading XML file"); return;
+                }                
+            }
+        }catch(err) {
+            alert("ERROR : Could not load the file");
+            return;
+        }
+        
+        // XML Parsing //
+        xmlDoc = xmlhttp.responseXML;
+        if(xmlDoc == null || xmlDoc.documentElement.nodeName == 'parsererror') { 
+            alert("PARSER ERROR : Cannot parse XML file"); 
+            return; 
+        }
+        parseContents();
+    }
+    
+    function validateElement(node, eltName) {
+        elt = node.getElementsByTagName(eltName)[0];
+        if (elt && elt.firstChild && elt.firstChild.nodeValue.trim())
+            return elt.firstChild.nodeValue;
+        else 
+            return "NA";
+    }
+    
+    function parseContents(){        
+        var nodeList = xmlDoc.getElementsByTagName("Listing");
+        if( nodeList.length == 0 ) {
+            alert("ERROR : No nodes/elements in XML file");
+        } else {        
+            win = window.open("","Real Estate Listings","height=700,width=700,resizable=yes,scrollbars=yes,toolbar=yes,status=yes");
+            var htmlBody="<html><body>";
+            htmlBody+="<title>Real Estate Listings</title>";
+            htmlBody+="<h2>Real Estate Listings</h2>";
+            htmlBody+="<table>";            
+            for (i=0; i<nodeList.length; i++) {            
+                htmlBody+="<tr><td>";
+                htmlBody+="<table border = '1' width = '100%'>";
+                htmlBody+="<tr style = 'text-align:center'><td colspan = 7><b>Listing<b></td></tr>";
+
+                htmlBody+="<tr style = 'font-weight:bold;text-align:center'>";
+                htmlBody+="<td>Location</td>";
+                htmlBody+="<td>Street</td>";
+                htmlBody+="<td>City</td>";
+                htmlBody+="<td>State</td>";  
+                htmlBody+="<td>Zip</td>";
+                htmlBody+="<td>Lat</td>";   
+                htmlBody+="<td>Long</td>";           
+                htmlBody+="</tr>";               
+
+                htmlBody+="<tr>";
+                htmlBody+="<td></td>";       
+                htmlBody+="<td>"+ validateElement(nodeList[i], 'StreetAddress') +"</td>";
+                htmlBody+="<td>"+ validateElement(nodeList[i], 'City') +"</td>";
+                htmlBody+="<td>"+ validateElement(nodeList[i], 'State') +"</td>";
+                htmlBody+="<td>"+ validateElement(nodeList[i], 'Zip') +"</td>";
+                htmlBody+="<td>"+ validateElement(nodeList[i], 'Lat') +"</td>";
+                htmlBody+="<td>"+ validateElement(nodeList[i], 'Long') +"</td>";
+                htmlBody+="</tr>";
+
+
+                htmlBody+="<tr style = 'font-weight:bold;text-align:center'>";
+                htmlBody+="<td>Details</td>";
+                htmlBody+="<td>Status</td>";
+                htmlBody+="<td>Price</td>";
+                htmlBody+="<td>Listing URL</td>";
+                htmlBody+="<td colspan = 3>Image</td>";         
+                htmlBody+="</tr>"; 
+
+                htmlBody+="<tr>";
+                htmlBody+="<td></td>";                     
+                htmlBody+="<td>"+ validateElement(nodeList[i], 'Status') +"</td>"; 
+                htmlBody+="<td>"+ validateElement(nodeList[i], 'Price') +"</td>";
+                htmlBody+="<td>";
+                hrefElt = nodeList[i].getElementsByTagName('ListingUrl')[0];
+                if(hrefElt && hrefElt.firstChild && hrefElt.firstChild.nodeValue.trim())
+                    htmlBody+="<a href = " + hrefElt.firstChild.nodeValue + ">Link to Listing</a>";
+                else
+                    htmlBody+="Link not available";
+                htmlBody+="</td>";
+                htmlBody+="<td colspan = 3>";
+                imgElt = nodeList[i].getElementsByTagName('Image')[0];
+                if(imgElt && imgElt.firstChild && imgElt.firstChild.nodeValue.trim()) 
+                    htmlBody+="<img src="+ imgElt.firstChild.nodeValue + " alt='Listing Image' height=200 width=220 align='center'/>";
+                else 
+                    htmlBody+="Image not available";
+                htmlBody+="</td>";
+                htmlBody+="</tr>";
+
+                htmlBody+="</table>";
+                htmlBody+="</td></tr>";
+            }
+            htmlBody+="</table>";
+            htmlBody+="</bo"+"dy></<html>";
+            win.document.write(htmlBody);
+            win.document.close();            
+        }
+    }
+</script>
+</head>
+<body bgcolor = '#E6E6E6'>
+    <form name = 'xml'>
+        <center><br><br>
+            <fieldset style="width:600px;height:200px">
+                <legend>Real Estate</legend>
+                <h2>Enter URL for Real Estate Catalog XML File </h2>   
+                <input type = 'text' id = 'url' style = 'width:300px' placeholder = 'Please enter the url'/><br><br><br>
+                <input type = 'button' id = 'query_submit' value = 'Submit Query' onclick = "loadXML(this.form)"/>
+            </fieldset>
+        </center>
+    </form>
+<noscript>
+</body>
+</html>
